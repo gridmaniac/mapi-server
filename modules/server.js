@@ -1,0 +1,51 @@
+const Koa = require('koa')
+const Router = require('koa-router')
+const parser = require('koa-bodyparser')
+const cors = require('@koa/cors')
+const passport = require('koa-passport')
+const serve = require('koa-static')
+const path = require('path')
+
+const app = new Koa()
+const router = new Router({ prefix: '/api' })
+
+const { isJWTAuthenticated } = require('./auth')
+
+const User = require('../controllers/user')
+router.post('/check', User.Check)
+router.post('/send-code', User.SendCode)
+router.post('/verify', User.Verify)
+router.post('/register', User.Create)
+router.get('/profile', isJWTAuthenticated, User.GetProfile)
+router.get('/service/:id', isJWTAuthenticated, User.GetServiceById)
+router.post('/delete', isJWTAuthenticated, User.Delete)
+router.post('/update', isJWTAuthenticated, User.Update)
+router.post('/convert', isJWTAuthenticated, User.ConvertToService)
+router.get('/favorites', isJWTAuthenticated, User.GetFavorites)
+router.post('/favorites', isJWTAuthenticated, User.AddFavorite)
+router.delete('/favorites', isJWTAuthenticated, User.RemoveFavorite)
+router.post('/search', isJWTAuthenticated, User.Search)
+router.post('/rate', isJWTAuthenticated, User.RateService)
+
+const Term = require('../controllers/term')
+router.get('/terms', Term.Search)
+router.get('/terms/:category', Term.SearchByCategory)
+
+const Search = require('../controllers/search')
+router.get('/test', isJWTAuthenticated, Search.Test)
+
+const Area = require('../controllers/area')
+router.get('/areas', isJWTAuthenticated, Area.Search)
+router.put('/areas', isJWTAuthenticated, Area.Set)
+router.put('/areas/loc', isJWTAuthenticated, Area.SetByLocation)
+router.post('/areas/loc', isJWTAuthenticated, Area.GetByLocation)
+
+app
+    .use(cors())
+    .use(parser({ jsonLimit: '5mb' }))
+    .use(passport.initialize())
+    .use(serve(path.join(__dirname , '../public')))
+    .use(router.routes())
+    .use(router.allowedMethods())
+
+app.listen(3010)
